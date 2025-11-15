@@ -803,7 +803,28 @@ pub struct ScoreArgs {
     pub bonus_exponent_final: f32,
 }
 
-pub fn prob_score(probs: &Vec<f32>, chars_so_far: u8, rlnn_mult: f32) -> Score {
+fn ilerp(i: u8, targets: &[(u8, f32)]) -> f32 {
+    let mut target_idx = 0;
+    while targets[target_idx].0 < i {
+        target_idx += 1;
+    }
+
+    if target_idx == 0 {
+        return targets[0].1;
+    }
+    let (prev_x, prev_y) = targets[target_idx - 1];
+    let (next_x, next_y) = targets[target_idx];
+    let dist = next_x - prev_x;
+    let t = (i as f32 - prev_x as f32) / dist as f32;
+    prev_y + t * (next_y - prev_y)
+}
+
+pub fn prob_score(
+    probs: &Vec<f32>,
+    chars_so_far: u8,
+    chars_remaining: u8,
+    rlnn_mult: f32,
+) -> Score {
     let mut probs: Vec<f64> = probs.iter().map(|p| *p as f64).collect();
     probs.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
@@ -818,20 +839,28 @@ pub fn prob_score(probs: &Vec<f32>, chars_so_far: u8, rlnn_mult: f32) -> Score {
 
     let mut prod: f64 = probs.iter().product();
 
+    let mid_boost = ((chars_so_far + chars_remaining) / 2).saturating_sub(10);
+    let late_boost = (chars_so_far + chars_remaining).saturating_sub(15);
+    let end = chars_so_far + chars_remaining;
+
+    let sched = vec![(0, 1.60), (mid_boost, 1.60), (late_boost, 1.75), (end, 3.0)];
+
     // Credit for distance elapsed is measured in characters, not in tokens. This hurts things with
     // digits in them a lot, but the Qwantzle has no digits!
-    let mut chars_i = 0.0;
-    while chars_i < chars_so_far as f32 {
-        // The linear approximation for how much the anagram helps things is rough, but seems about accurate in practice.
-        let filter_ratio: f32 = 0.05 + 0.55 * f32::max((80.0 - chars_i) / 80.0, 0.75);
+    let mut chars_i = 0;
+    while chars_i < chars_so_far {
+        prod *= ilerp(chars_i, &sched) as f64;
 
-        // This is unmotivated; purely empirical. Starts at 5.0, goes towards 4.0:
-        //let len_bonus = f32::max(0.0, ((100.0 - chars_i) / 100.0) * 1.0) + 3.0;
-        let len_bonus = 4.5;
+        // // The linear approximation for how much the anagram helps things is rough, but seems about accurate in practice.
+        // let filter_ratio: f32 = 0.05 + 0.55 * f32::max((80.0 - chars_i) / 80.0, 0.75);
 
-        prod = f32::powf((1.0 + len_bonus) / filter_ratio, 0.25) as f64 * prod;
+        // // This is unmotivated; purely empirical. Starts at 5.0, goes towards 4.0:
+        // //let len_bonus = f32::max(0.0, ((100.0 - chars_i) / 100.0) * 1.0) + 3.0;
+        // let len_bonus = 4.5;
 
-        chars_i += 1.0;
+        // prod = f32::powf((1.0 + len_bonus) / filter_ratio, 0.25) as f64 * prod;
+
+        chars_i += 1;
     }
 
     Score(prod * rlnn_mult as f64)
@@ -899,7 +928,12 @@ impl Node {
         res.text.push(t.0);
         res.tok_probs.push(prob);
 
-        let score = prob_score(&res.tok_probs, res.chars_so_far, rlnn_prob);
+        let score = prob_score(
+            &res.tok_probs,
+            res.chars_so_far,
+            res.remaining.size() as u8,
+            rlnn_prob,
+        );
 
         Some((res, score))
     }
@@ -1162,4 +1196,15 @@ pub fn manual_search(llm: &LlamaModel, hints: Hints, prefix: &str) {
     }
 
     println!("{}\n{}", ok_s, not_ok_s);
+}
+
+#[test]
+fn ilerp_check() {
+    let sched = [(0, 0.0), (10, 10.0), (11, 100.0), (13, 200.0)];
+    assert_eq!(ilerp(0, &sched), 0.0);
+    assert_eq!(ilerp(5, &sched), 5.0);
+    assert_eq!(ilerp(10, &sched), 10.0);
+    assert_eq!(ilerp(11, &sched), 100.0);
+    assert_eq!(ilerp(12, &sched), 150.0);
+    assert_eq!(ilerp(13, &sched), 200.0);
 }
