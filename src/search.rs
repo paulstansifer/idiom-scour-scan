@@ -56,6 +56,12 @@ impl PartialEq for Node {
 }
 impl Eq for Node {}
 
+// gets 10% of the queue space...
+const THEORY_OF_TIES_QUEUE_RATIO: f32 = 0.1;
+
+// gets looked at 1/16th of the time...
+const THEORY_OF_TIES_TIME_RATIO: usize = 16;
+
 #[derive(Serialize, Deserialize, Clone, Default)]
 struct Q {
     ties_respecting: PriorityQueue<Node, Score>,
@@ -70,6 +76,8 @@ impl Q {
         }
     }
     fn trim(self, elts: usize) -> Q {
+        let t_o_t_elts = (elts as f32 * THEORY_OF_TIES_QUEUE_RATIO) as usize;
+        let normal_elts = elts - t_o_t_elts;
         Q {
             ties_respecting: PriorityQueue::<Node, Score>::from_iter(
                 self.ties_respecting
@@ -79,7 +87,7 @@ impl Q {
                         node.depth_at_pruning = std::cmp::max(node.depth_at_pruning, i as u32);
                         (node, score)
                     })
-                    .take(elts),
+                    .take(t_o_t_elts),
             ),
             non_ties_respecting: PriorityQueue::<Node, Score>::from_iter(
                 self.non_ties_respecting
@@ -89,7 +97,7 @@ impl Q {
                         node.depth_at_pruning = std::cmp::max(node.depth_at_pruning, i as u32);
                         (node, score)
                     })
-                    .take(elts),
+                    .take(normal_elts),
             ),
         }
     }
@@ -607,10 +615,9 @@ impl SearchState<'_> {
         self.progress.tick();
         let step_start = std::time::Instant::now();
 
-        if let Some((node, p)) = self
-            .q
-            .pop(/*require_tie_respecting=*/ (self.step / 100) % 8 == 0)
-        {
+        if let Some((node, p)) = self.q.pop(
+            /*require_tie_respecting=*/ (self.step / 100) % THEORY_OF_TIES_TIME_RATIO == 0,
+        ) {
             self.deepest_node_accessed =
                 std::cmp::max(self.deepest_node_accessed, node.depth_at_pruning);
             let cur_text = toks_to_str(&node.tokens(), &self.llm);
@@ -662,10 +669,9 @@ impl SearchState<'_> {
 
         let quit_now = TIME_TO_QUIT.load(std::sync::atomic::Ordering::SeqCst);
 
-        if self.q.len() > 10_000_000 || quit_now {
+        if self.q.len() > 9_000_000 || quit_now {
             self.log_ln(&format!("Queue length is {}; trimming.", self.q.len()));
-            // must be less than half the threshold!
-            self.q = std::mem::take(&mut self.q).trim(4_000_000);
+            self.q = std::mem::take(&mut self.q).trim(7_000_000);
         }
 
         self.search_time += step_start.elapsed();
