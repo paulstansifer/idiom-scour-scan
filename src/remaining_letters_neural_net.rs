@@ -33,6 +33,10 @@ impl LetterNet {
     }
 
     pub fn evaluate(&self, remaining: &LetterPool) -> f32 {
+        // Special case: this is definitely good! (the NN only gives 0.6 or 0.7 or so)
+        if remaining.empty_of_letters() {
+            return 1.0;
+        }
         let mut features = vec![0.0; CHAR_FEATURE_ORDER.len() + 3];
 
         let mut vowels = 0.0;
