@@ -17,7 +17,9 @@ lazy_static! {
 }
 
 pub fn model_from_gguf(path: impl AsRef<std::path::Path>, on_gpu: bool) -> LlamaModel {
-    let _stderr_gag = gag::Gag::stderr().unwrap();
+    if let Err(e) = gag::Gag::stderr() {
+        println!("Trouble silencing stderr: {e}");
+    }
     let params: LlamaModelParams =
         LlamaModelParams::default().with_n_gpu_layers(if on_gpu { 1000000 } else { 0 });
     // TODO: wish we could set the defrag threshold. Manually defrag?

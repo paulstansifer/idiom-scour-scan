@@ -311,7 +311,7 @@ impl SearchState<'_> {
         hints: Hints,
         max_search: Option<usize>,
         start_prefixes: Vec<String>,
-    ) -> SearchState {
+    ) -> SearchState<'_> {
         let token_size = hints.token_size as u32;
 
         let q = Q::new();
