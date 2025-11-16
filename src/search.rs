@@ -847,12 +847,12 @@ pub fn prob_score(
     // }
 
     let mut prod: f64 = probs.iter().product();
+    let len = chars_so_far + chars_remaining;
+    let mid = (len / 2).saturating_sub(10);
+    let late = len.saturating_sub(20);
+    let v_late = len.saturating_sub(10); // Start of late push to find anything that fits!
 
-    let mid_boost = ((chars_so_far + chars_remaining) / 2).saturating_sub(10);
-    let late_boost = (chars_so_far + chars_remaining).saturating_sub(15);
-    let end = chars_so_far + chars_remaining;
-
-    let sched = vec![(0, 1.60), (mid_boost, 1.60), (late_boost, 1.75), (end, 3.0)];
+    let sched = vec![(0, 1.6), (mid, 1.6), (late, 1.75), (v_late, 3.), (len, 5.)];
 
     // Credit for distance elapsed is measured in characters, not in tokens. This hurts things with
     // digits in them a lot, but the Qwantzle has no digits!
