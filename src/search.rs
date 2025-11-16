@@ -515,6 +515,42 @@ impl SearchState<'_> {
         }
     }
 
+    pub fn hof_write(&self) {
+        std::fs::write("/tmp/hof-mod", self.hall_of_fame.modulo_nodes.join("\n")).unwrap();
+
+        std::fs::write(
+            "/tmp/hof-best",
+            format!(
+                "{}\n====\n{}",
+                self.hall_of_fame.possible_completions.join("\n---\n"),
+                self.hall_of_fame
+                    .high_score_nodes
+                    .clone()
+                    .into_sorted_vec()
+                    .join("\n")
+            ),
+        )
+        .unwrap();
+        std::fs::write(
+            "/tmp/hof-best-ties",
+            self.hall_of_fame
+                .high_score_tie_nodes
+                .clone()
+                .into_sorted_vec()
+                .join("\n"),
+        )
+        .unwrap();
+        std::fs::write(
+            "/tmp/hof-long",
+            self.hall_of_fame
+                .long_nodes
+                .clone()
+                .into_sorted_vec()
+                .join("\n"),
+        )
+        .unwrap();
+    }
+
     fn hof_update(&mut self, desc: String, len: usize, p: Score, respects_ties: bool) {
         let initial_node_limit = if self.hints.goal.is_none() {
             2_000
@@ -574,39 +610,7 @@ impl SearchState<'_> {
         }
 
         if self.step % 10_000 == 0 {
-            std::fs::write("/tmp/hof-mod", self.hall_of_fame.modulo_nodes.join("\n")).unwrap();
-
-            std::fs::write(
-                "/tmp/hof-best",
-                format!(
-                    "{}\n====\n{}",
-                    self.hall_of_fame.possible_completions.join("\n---\n"),
-                    self.hall_of_fame
-                        .high_score_nodes
-                        .clone()
-                        .into_sorted_vec()
-                        .join("\n")
-                ),
-            )
-            .unwrap();
-            std::fs::write(
-                "/tmp/hof-best-ties",
-                self.hall_of_fame
-                    .high_score_tie_nodes
-                    .clone()
-                    .into_sorted_vec()
-                    .join("\n"),
-            )
-            .unwrap();
-            std::fs::write(
-                "/tmp/hof-long",
-                self.hall_of_fame
-                    .long_nodes
-                    .clone()
-                    .into_sorted_vec()
-                    .join("\n"),
-            )
-            .unwrap();
+            self.hof_write();
         }
     }
 

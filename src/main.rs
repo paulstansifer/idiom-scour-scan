@@ -72,13 +72,17 @@ struct Args {
     #[arg(long)]
     tok_score: Option<usize>,
 
-    // For tok-score, use a different suffix.
+    /// For tok-score, use a different suffix.
     #[arg(long)]
     suffix: Option<String>,
 
     /// Perform a search on the given strip ID, or loading a saved search
     #[arg(long)]
     search_one: Option<String>,
+
+    /// Recover the HOF from a save file.
+    #[arg(long)]
+    recover_hof: Option<String>,
 
     /// Start the search from the prefixes in the given file, instead of the empty prefix.
     #[arg(long)]
@@ -746,6 +750,9 @@ fn main() {
             let mut search = SearchState::load(&search, &model);
             search.search();
         }
+    } else if let Some(hof_file) = args.recover_hof {
+        let search = SearchState::load(&hof_file, &model);
+        search.hof_write();
     } else if let Some(id) = args.search_manual {
         let hints = if id == 1663 {
             search::Hints::for_1663(&words, !args.ignore_ties, &model)
