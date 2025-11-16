@@ -19,7 +19,6 @@ use crate::{
     TIME_TO_QUIT,
 };
 
-// Pretent to really be `Cmp`.
 #[derive(PartialOrd, PartialEq, Clone, Copy, Serialize, Deserialize, Debug)]
 pub struct Score(pub f64);
 

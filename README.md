@@ -1,8 +1,8 @@
 # Idiom Scour/Scan
 
-The punchline to [Dinosaur Comics strip 1663](https://www.qwantz.com/index.php?comic=1663) was given in anagram form. It's now known as the "Qwantzle", and people have been trying to figure out the punchline since it was published in 2010. 
+Dinosaur Comics is a long-running webcomic by Ryan North, in which the art is identical in every strip; only the words change. In 2010, [strip 1663](https://www.qwantz.com/index.php?comic=1663) discussed a brief fad among scientists in the 1600s of claiming priority by publishing anagrams of their ideas. The punchline to the strip is presented in anagram form. It's now known as the "Qwantzle", and people have been trying to unscramble it since it was published. 
 
-Idiom Scour/Scan is a tool to try to unscramble it by doing a search that broadly examines possible sentence beginnings and deeply investigates promising leads, all while trying to fit the context and authorial voice.  (Also, "Idiom Scour/Scan" is an anagram of "Dinosaur Comics".)
+Idiom Scour/Scan is a tool to unscramble anagrams by doing a search that broadly examines possible sentence beginnings and deeply investigates promising leads, all while trying to fit the context and authorial voice.  (Also, "Idiom Scour/Scan" is an anagram of "Dinosaur Comics".)
 
 ## How it works
 
